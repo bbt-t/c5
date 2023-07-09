@@ -47,6 +47,9 @@ class Vacancy(BaseModel):
         self._default_currency = currency
 
     def currency_exchange_salary(self) -> int | None:
+        """
+        Currency exchange for the necessary.
+        """
         try:
             with request.urlopen(
                 f"https://open.er-api.com/v6/latest/{self.currency}"
@@ -109,12 +112,18 @@ class HeadHunterAPI:
 
     @staticmethod
     def _get_salary(salary: HeadHunterVacancySalary):
+        """
+        Sets the value of salary.
+        """
         if salary.salary_minimal:
             return salary.salary_minimal
         return salary.salary_maximum
 
     @staticmethod
     async def fetch(session: ClientSession, url: str):
+        """
+        Async request.
+        """
         async with session.get(url) as response:
             return await response.text()
 
