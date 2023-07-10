@@ -9,12 +9,12 @@ from tools import FileReader
 from psycopg import DatabaseError
 
 
-async def get_vacancies_by_employer(employers_id: Iterable, job_api: HeadHunterAPI):
+async def get_vacancies_by_employer(employers_id: Iterable, job_api: HeadHunterAPI) -> list:
     """
     Receives vacancies of random employers.
     :param employers_id:
     :param job_api:
-    :return:
+    :return: vacancies
     """
     return await job_api.get_by_employers(employers_id, 100)
 
@@ -23,7 +23,7 @@ def get_employers(job_api: HeadHunterAPI) -> set:
     """
     Receives a list employers.
     :param job_api: api-obj
-    :return:
+    :return: employers ids
     """
     employers_py = set(job_api.get_employers_id("python", 100))
     employers_go = set(job_api.get_employers_id("go", 100))
