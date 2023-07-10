@@ -1,21 +1,16 @@
 from asyncio import gather as asyncio_gather
-from aiohttp.client import ClientSession
+from typing import LiteralString, Generator, Iterable
+from urllib import request, error
 
 from entity.hh import (
     HeadHunterAPIVacancies,
     HeadHunterVacancyEmployer,
     HeadHunterVacancySalary,
 )
-from typing import LiteralString, Generator, Iterable
-from urllib import request, error
 
-from orjson import dumps, loads
+from aiohttp import ClientConnectorError
+from aiohttp.client import ClientSession
 from pydantic import BaseModel, AnyHttpUrl, NonNegativeInt, Field
-
-
-def orjson_dumps(v, *, default):
-    # orjson.dumps returns bytes, to match standard json.dumps we need to decode
-    return dumps(v, default=default).decode()
 
 
 class Vacancy(BaseModel):
@@ -30,14 +25,6 @@ class Vacancy(BaseModel):
     currency: str = "RUB"
     _default_currency: str = "RUB"
 
-    class Config:
-        """
-        Fast serialize.
-        """
-
-        json_loads = loads
-        json_dumps = orjson_dumps
-
     @property
     def default_currency(self):
         return self._default_currency
@@ -46,22 +33,21 @@ class Vacancy(BaseModel):
     def default_currency(self, currency: LiteralString):
         self._default_currency = currency
 
-    def currency_exchange_salary(self) -> int | None:
+    async def set_currency_salary(self, session: ClientSession) -> None:
         """
-        Currency exchange for the necessary.
+        Async request. Currency exchange for the necessary.
         """
+        url = f"https://open.er-api.com/v6/latest/{self.currency}"
         try:
-            with request.urlopen(
-                f"https://open.er-api.com/v6/latest/{self.currency}"
-            ) as url:
-                data = loads(url.read().decode())
+            async with session.get(url) as response:
+                data = await response.json()
 
             if data["result"] == "success":
-                return data["rates"][self.default_currency] * self.salary
-        except error:
+                self.salary = data["rates"][self.default_currency] * self.salary
+        except ClientConnectorError as e:
+            print(f"Connection error -> {e}")
+        except KeyError:
             print(f"! {self.currency} not supported !")
-        except KeyError as e:
-            print(f"error :: {repr(e)} ::")
 
 
 class HeadHunterAPI:
@@ -75,26 +61,35 @@ class HeadHunterAPI:
     async def get_by_employers(self, employers: Iterable, amt: int):
         async with ClientSession() as session:
             results = [
-                self.fetch(session, self.query_by_employers.format(emp_id, amt))
+                self._fetch(session, self.query_by_employers.format(emp_id, amt))
                 for emp_id in employers
             ]
             data_raw = await asyncio_gather(*results)
 
-        vacancies_items = [
-            HeadHunterAPIVacancies.parse_raw(data).items for data in data_raw
-        ]
-        return [
-            Vacancy(
-                title=item.name,
-                url=item.alternate_url,
-                employer=item.employer,
-                salary=0 if not item.salary else self._get_salary(item.salary),
-                currency="RUB"
-                if not item.salary
-                else self._currency_mapping(item.salary.currency),
-            )
-            for item in sum(vacancies_items, [])
-        ]
+        async with ClientSession() as session:
+            for vac in (
+                vacancy := [
+                    Vacancy(
+                        title=item.name,
+                        url=item.alternate_url,
+                        employer=item.employer,
+                        salary=0 if not item.salary else self._get_salary(item.salary),
+                        currency="RUB"
+                        if not item.salary
+                        else self._currency_mapping(item.salary.currency),
+                    )
+                    for item in sum(
+                        [
+                            HeadHunterAPIVacancies.parse_raw(data).items
+                            for data in data_raw
+                        ],
+                        [],
+                    )
+                ]
+            ):
+                await vac.set_currency_salary(session)
+
+        return vacancy
 
     def get_employers_id(self, search: str, amt: int | str) -> Generator:
         """
@@ -120,7 +115,7 @@ class HeadHunterAPI:
         return salary.salary_maximum
 
     @staticmethod
-    async def fetch(session: ClientSession, url: str):
+    async def _fetch(session: ClientSession, url: str):
         """
         Async request.
         """

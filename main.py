@@ -1,4 +1,5 @@
-from asyncio import run, wait_for
+import time
+from asyncio import run
 
 from dump.dump_vacancies import init
 from storage.db import Storage
@@ -27,5 +28,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     # for test:
-    run(wait_for(init(), 10))  # dump to db
+    run(init())  # dump to db
     main()  # test methods
