@@ -1,3 +1,5 @@
+# Interfaces module
+
 from typing import Protocol
 
 

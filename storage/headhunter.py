@@ -1,3 +1,5 @@
+# HeadHunter DB manager
+
 from psycopg import DatabaseError
 from psycopg.rows import class_row
 

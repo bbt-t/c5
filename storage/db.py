@@ -1,11 +1,17 @@
+# Choice the DB manager
+
 from dataclasses import dataclass, field
 
-from .headhunter import DBManagerHH
-from .interface import DBManager
+from storage.headhunter import DBManagerHH
+from storage.interface import DBManager
 
 
 @dataclass(slots=True, eq=False)
 class Storage:
+    """
+    Init DB manager by param.
+    """
+
     db: DBManager = field(init=False)
     param: dict
 

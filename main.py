@@ -1,4 +1,3 @@
-import time
 from asyncio import run
 
 from dump.dump_vacancies import init
