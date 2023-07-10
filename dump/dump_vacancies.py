@@ -38,10 +38,17 @@ async def dump(database: Database, job_api: HeadHunterAPI, count: int = 20) -> N
     :param job_api: api-object
     :param count: how many employers
     """
-    vacancies = await get_vacancies_by_employer(
-        SystemRandom.sample(SystemRandom(), list(get_employers(job_api)), count),
-        job_api,
-    )
+    employers_ids = get_employers(job_api)
+    if len(employers_ids) >= count:
+        vacancies = await get_vacancies_by_employer(
+            SystemRandom.sample(SystemRandom(), list(employers_ids), count),
+            job_api,
+        )
+    else:
+        vacancies = await get_vacancies_by_employer(
+            employers_ids,
+            job_api,
+        )
 
     conn = database.conn()
     cursor = conn.cursor()
