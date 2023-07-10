@@ -1,3 +1,4 @@
+from secrets import SystemRandom
 from typing import Iterable
 
 from dump.api import HeadHunterAPI
@@ -38,7 +39,8 @@ async def dump(database: Database, job_api: HeadHunterAPI, count: int = 20) -> N
     :param count: how many employers
     """
     vacancies = await get_vacancies_by_employer(
-        list(get_employers(job_api))[:count], job_api
+        SystemRandom.sample(SystemRandom(), list(get_employers(job_api)), count),
+        job_api,
     )
 
     conn = database.conn()
