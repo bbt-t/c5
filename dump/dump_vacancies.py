@@ -1,6 +1,7 @@
 from secrets import SystemRandom
-from typing import Iterable
+from typing import Iterable, Literal
 
+from config import PGConfig
 from dump.api import HeadHunterAPI
 from storage.interface import Database
 from storage.pg import PG
@@ -9,7 +10,9 @@ from tools import FileReader
 from psycopg import DatabaseError
 
 
-async def get_vacancies_by_employer(employers_id: Iterable, job_api: HeadHunterAPI) -> list:
+async def get_vacancies_by_employer(
+    employers_id: Iterable, job_api: HeadHunterAPI
+) -> list:
     """
     Receives vacancies of random employers.
     :param employers_id:
@@ -49,7 +52,6 @@ async def dump(database: Database, job_api: HeadHunterAPI, count: int = 20) -> N
             employers_ids,
             job_api,
         )
-
     conn = database.conn()
     cursor = conn.cursor()
 
@@ -59,7 +61,6 @@ async def dump(database: Database, job_api: HeadHunterAPI, count: int = 20) -> N
                 "INSERT INTO vacancies(title,company_name,salary,link) VALUES (%s,%s,%s,%s)",
                 (item.title, item.employer.name, item.salary, item.url),
             )
-
         conn.commit()
     except DatabaseError as err:
         print("error in transaction -> ", err)
@@ -74,14 +75,22 @@ async def dump(database: Database, job_api: HeadHunterAPI, count: int = 20) -> N
             print("DB connection is closed")
 
 
-async def init() -> None:
+async def init(env: Literal["env", "file"]) -> None:
     """
     Initialized test data records a DB.
     """
     reader = FileReader("dump/queries.sql")
-    db = PG()
+    match env:
+        case "env":
+            cfg = PGConfig().env
+        case "file":
+            cfg = PGConfig().file
+        case _:
+            raise ValueError(f"Unknown param -> {env}")
 
+    db = PG(cfg)
     db.create_tables(reader)
+
     api = HeadHunterAPI()
 
     await dump(db, api)

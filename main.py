@@ -1,5 +1,6 @@
 from asyncio import run
 
+from config import PGConfig
 from dump.dump_vacancies import init
 from storage.db import Storage
 from storage.pg import PG
@@ -11,7 +12,8 @@ def main() -> None:
     Main func.
     """
     reader = FileReader("dump/queries.sql")
-    pg = PG()
+
+    pg = PG(PGConfig().env)
     pg.create_tables(reader)
 
     param = {
@@ -27,5 +29,5 @@ def main() -> None:
 
 if __name__ == "__main__":
     # for test:
-    run(init())  # dump to db
+    run(init("env"))  # dump to db
     main()  # test methods

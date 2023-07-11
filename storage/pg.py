@@ -6,6 +6,7 @@ from typing import Mapping
 from psycopg import connect as psycopg3_connect
 from psycopg import OperationalError
 
+from config import DBConfigFile, DBConfigENV
 from storage.interface import Reader
 
 
@@ -14,18 +15,8 @@ class PG:
     Database.
     """
 
-    @staticmethod
-    def _get_env() -> Mapping[str, str]:
-        """
-        Get values from envs.
-        """
-        return {
-            "host": getenv("HOST", "localhost"),
-            "port": getenv("PG_PORT", 5432),
-            "dbname": getenv("POSTGRES_DB"),
-            "user": getenv("POSTGRES_USER"),
-            "password": getenv("POSTGRES_PASSWORD"),
-        }
+    def __init__(self, cfg: DBConfigENV | DBConfigFile):
+        self.cfg = cfg
 
     def create_tables(self, reader: Reader):
         with self.conn() as conn:
@@ -36,7 +27,13 @@ class PG:
         Connect to database.
         """
         try:
-            connect = psycopg3_connect(**self._get_env())
+            connect = psycopg3_connect(
+                host=self.cfg.host,
+                port=self.cfg.port,
+                dbname=self.cfg.db_name,
+                user=self.cfg.db_user,
+                password=self.cfg.password.get_secret_value(),
+            )
         except OperationalError as err:
             print("Can't connect to DB -> ", err)
             raise SystemExit
