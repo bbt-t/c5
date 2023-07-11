@@ -15,6 +15,12 @@ Linux -> `python3 main.py`
 
 ***ENV***
 
-> необходимо прописать константы для подключения к базе данных Postgres:
+> необходимо прописать константы для подключения к базе данных Postgres и передавать ([тут](https://github.com/bbt-t/c5/blob/1bf8c273de3dc7b674361996f9aee20e8b74aac2/main.py#L32C15-L32C18) и [тут](https://github.com/bbt-t/c5/blob/1bf8c273de3dc7b674361996f9aee20e8b74aac2/main.py#L16C24-L16C27)) атрибут конфига:
 
+из env's (по умолчанию):
 ```HOST``` ```PG_PORT``` ```POSTGRES_DB``` ```POSTGRES_USER``` ```POSTGRES_PASSWORD```
+
+
+из файла `.env` (должен находиться в корне проекта, пример смотри тут -> [example_env_file](https://github.com/bbt-t/c5/blob/dev/.example_env)) - передавать атрибут конфига `.file`
+
+
