@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "c5"
+version = "0.1.0"
+description = ""
+authors = ["bbt-t <zlukcss@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+psycopg = {extras = ["binary"], version = "^3.1.9"}
+aiohttp = "^3.8.4"
+pydantic = {version = "1.10.8", extras = ["dotenv"]}
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
